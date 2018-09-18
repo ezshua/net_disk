@@ -1,5 +1,5 @@
 APName:Rizikon
-APPass:0123456789
+APPass:01234567
 
 APName:HomeDotNew
-APPass:9876543210
+APPass:98765432
