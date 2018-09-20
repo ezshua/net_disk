@@ -129,12 +129,12 @@ void displayFilesInfo(){
     // стираем надпись про проверку карты
     oled.println("                                                                       ");// примитивно затираем строку
     //oled.display();
-    oled.println("SDCard empty!");
+    oled.println("SDCard empty!                                                          ");
     oled.display();
     return;
   }
   
-    u_long fspace = calcFreeSpaceKB();
+  u_long fspace = calcFreeSpaceKB();
   Serial.print("Files: ");
   Serial.print(countFiles);
   Serial.print(", used: ");
@@ -145,7 +145,10 @@ void displayFilesInfo(){
   //double upers = 100*uspace/(fspace+uspace);
   //double fpers = 100*fspace/(fspace+uspace);
   // стираем надпись про проверку карты
-  oled.println("                                                                       ");// примитивно затираем строку
+  oled.println("                    ");// примитивно затираем строку
+  oled.println("                    ");// примитивно затираем строку
+  oled.println("                    ");// примитивно затираем строку
+  oled.println("                    ");// примитивно затираем строку
   oled.display();
   // устанавливаем в позицию курсор
   oled.setCursor(filesInfoX, filesInfoY);
@@ -166,6 +169,7 @@ void returnFail(String msg) {
 }
 
 bool loadFromSdCard(String path){
+  digitalWrite(LED_BUILTIN, 0); // подсвечиваем активность
   Serial.print("From: "); Serial.println(path);
   String dataType = "text/plain";
   //if(path.endsWith("/")) path += "index.htm";
@@ -190,6 +194,7 @@ bool loadFromSdCard(String path){
   File dataFile = SD.open(path.c_str());
   if (!dataFile){
     Serial.print(path.c_str());Serial.println(" not found!");
+    digitalWrite(LED_BUILTIN, 1); // подсвечиваем активность
     return false;
   }
 
@@ -201,6 +206,7 @@ bool loadFromSdCard(String path){
 
   if (!dataFile){
     Serial.print(path.c_str());Serial.println(" not found!");
+    digitalWrite(LED_BUILTIN, 1); // подсвечиваем активность
     return false;
   }
 
@@ -218,6 +224,7 @@ bool loadFromSdCard(String path){
   }
 
   dataFile.close();
+  digitalWrite(LED_BUILTIN, 1); // подсвечиваем активность
   return true;
 }
 
@@ -226,9 +233,10 @@ int pers = 0;
 int statusX = 0;
 int statusY = 0;
 void handleFileUpload(){
-  if(server.uri() != "/edit") return;
+  if(server.uri() != "/edit") return;  
   HTTPUpload& upload = server.upload();
   if(upload.status == UPLOAD_FILE_START){
+    digitalWrite(LED_BUILTIN, 0); // подсвечиваем активность
     if(SD.exists((char *)upload.filename.c_str())) SD.remove((char *)upload.filename.c_str());
     uploadFile = SD.open(upload.filename.c_str(), FILE_WRITE);
     Serial.print("Upload: START, filename: "); Serial.println(upload.filename);
@@ -243,11 +251,12 @@ void handleFileUpload(){
   } else if(upload.status == UPLOAD_FILE_WRITE){
     if(uploadFile) uploadFile.write(upload.buf, upload.currentSize);
     pers += upload.currentSize;
-        //Serial.print("Upload: WRITE+");Serial.print(upload.currentSize); Serial.print(" = ");Serial.print(upload.totalSize); Serial.println(" bytes");
+    //Serial.print("Upload: WRITE+");Serial.print(upload.currentSize); Serial.print(" = ");Serial.print(upload.totalSize); Serial.println(" bytes");
     // oled.setCursor(statusX, statusY); 
     // oled.setTextColor(WHITE,BLACK); 
     // oled.print("Upload: "); oled.print(upload.totalSize); oled.println(" B"); oled.display();
-  } else if(upload.status == UPLOAD_FILE_END){
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); // подсвечиваем активность
+  } else if(upload.status == UPLOAD_FILE_END){    
     if(uploadFile) uploadFile.close();
     int interval = millis() - startM;
     int speed = upload.totalSize / interval;
@@ -259,13 +268,14 @@ void handleFileUpload(){
     oled.println("                                                                                                               ");// примитивно затираем строку
     oled.setCursor(statusX, statusY); 
     oled.setTextColor(WHITE,BLACK); 
-    oled.print("Upl: "); oled.print(upload.totalSize); oled.println(" B");
+    oled.print("Upl: "); oled.print(upload.totalSize/1024); oled.println(" KB");
     oled.print("Spd:"); oled.print(speed); oled.println(" KB/sec");
     oled.display();
         // Serial.print("Upload: END, Interval: ");Serial.print(interval);Serial.println(" msec");
         // Serial.print("Upload: END, Speed: ");Serial.print(speed);Serial.println(" kbytes/sec");
     
     displayFilesInfo();
+    digitalWrite(LED_BUILTIN, 1); // подсвечиваем активность
   }
 }
 
@@ -338,6 +348,8 @@ void printDirectory() {
     dir.close();
     return returnFail("NOT DIR");
   }
+  
+  digitalWrite(LED_BUILTIN, 0); // подсвечиваем активность
   dir.rewindDirectory();
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
   server.send(200, "text/json", "");
@@ -368,10 +380,11 @@ void printDirectory() {
     output += "}";
     //Serial.println("-- "+output);
     server.sendContent(output);
-    entry.close();
+    entry.close();    
  }
  server.sendContent("]");
  dir.close();
+ digitalWrite(LED_BUILTIN, 1); // подсвечиваем активность
 }
 
 
@@ -426,6 +439,8 @@ void handleNotFound(){
 // }
 
 void setup(void){
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, 0);
   Serial.begin(115200);
   delay(1000);
   //Serial.setDebugOutput(true);
@@ -439,7 +454,7 @@ void setup(void){
   oled.setCursor(0,0);
   //oled.setTextSize(2);
   oled.setTextColor(WHITE);
-
+  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); // подсвечиваем активность
   bool loadSett = false;
   if (SD.begin(SS, SPI_HALF_SPEED)){
      Serial.println("SDCard initialized");
@@ -447,7 +462,7 @@ void setup(void){
      //SD.initErrorHalt();
      loadSett = LoadSettingFile(SD, "/settings.md");
   }    
-
+  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); // подсвечиваем активность
   // старая версия подключения, для пары точек с фиксированными в коде параметрами
   if (!loadSett){
     bool noWiFi = true;
@@ -490,7 +505,7 @@ void setup(void){
     }
     } while (!isWiFi);
   }
-  
+  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); // подсвечиваем активность
   oled.print("SSID: "); oled.println(ssid);
   oled.print("IP:   "); oled.println(WiFi.localIP());
   oled.display();  
@@ -503,7 +518,7 @@ void setup(void){
 
   server.begin();
   Serial.println("HTTP server started");
-
+  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); // подсвечиваем активность
   if (hasSD){    
     oled.println("SDCard init!"); oled.display();
     filesInfoX = oled.getCursorX();
@@ -521,6 +536,7 @@ void setup(void){
     oled.println("No SDCard"); oled.display();
   }
   
+  digitalWrite(LED_BUILTIN, 1);
 }
 
 void loop(void){
