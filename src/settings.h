@@ -3,4 +3,4 @@
 
 extern String ssid_list[5];
 extern String password_list[5];
-bool LoadSettingFile(SdFat SD, char * name);
+bool LoadSettingFile(SdFat SD, String name);

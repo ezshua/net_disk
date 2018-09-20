@@ -41,6 +41,7 @@
 //#include <SD.h>
 #include <SdFat.h>
 SdFat SD;
+static bool hasSD = false;
 
 #include "utf8rus.h"
 #include <Adafruit_GFX.h>
@@ -49,16 +50,7 @@ SdFat SD;
 #define OLED_RESET D4
 Adafruit_SSD1306 oled(OLED_RESET);
 
-const char* ssid = "Rizikon";
-const char* password = "02112012nov";
-const char* ssid2 = "HomeDotNew";
-const char* password2 = "asusnotik";
-const char* host = "esp8266sd";
-
 ESP8266WebServer server(80);
-
-static bool hasSD = false;
-File uploadFile;
 
 long countFiles=0;
 long calcUsedSpaceKB(String basepath) {
@@ -154,8 +146,8 @@ void displayFilesInfo(){
   oled.setCursor(filesInfoX, filesInfoY);
   oled.setTextColor(WHITE, BLACK);
   oled.print("Files: ");  oled.println(countFiles);
-  oled.print("Used:  ");  oled.print(uspace);  oled.println(" KB"); //");oled.print(upers);oled.println(" %)");
-  oled.print("Free:  ");  oled.print(fspace);  oled.println(" KB"); //");oled.print(fpers);oled.println(" %)");
+  oled.print("Used:  ");  oled.print(uspace/1024);  oled.println(" MB"); //");oled.print(upers);oled.println(" %)");
+  oled.print("Free:  ");  oled.print(fspace/1024);  oled.println(" MB"); //");oled.print(fpers);oled.println(" %)");
   oled.display();
 }
 
@@ -232,6 +224,7 @@ int startM = 0;
 int pers = 0;
 int statusX = 0;
 int statusY = 0;
+File uploadFile;
 void handleFileUpload(){
   if(server.uri() != "/edit") return;  
   HTTPUpload& upload = server.upload();
@@ -387,8 +380,6 @@ void printDirectory() {
  digitalWrite(LED_BUILTIN, 1); // подсвечиваем активность
 }
 
-
-
 void handleNotFound(){
   //Serial.print("handleNotFound!");
   if(hasSD && loadFromSdCard(server.uri())) return;
@@ -407,37 +398,6 @@ void handleNotFound(){
   Serial.print(message);
 }
 
-// void pf(SdBaseFile s, char subdirs[][50], ArduinoOutStream outp, char dirnr = -1) {
-//   SdFile file;
-//   char name[20];                            // 8.3 format
-//   while (1) {
-//     if (!file.openNext(&s, O_READ)) break;  // no file - end
-//     bool z = file.isDir();
-//     file.getName(name, 20);                 // File/directory name
-//     uint32_t fsize = file.fileSize();       // filesize
-//     file.close();                           // closing bevore open the next one
-//     if (z) {                                // add subdir and run new list
-//       memcpy(subdirs[dirnr + 1], name, strlen(name) + 1);
-//       SdBaseFile n;                         // new basefile for next directory
-//       uint16_t index = s.curPosition() / 32 - 1; //index of current directory
-//       n.open(&s, index, O_READ);            // open the directory
-//       //pf(n, subdirs, outp, dirnr + 1);           // list files/directorys in this dir
-//     }
-//     else {                                  // print filename
-//       for (byte i = 0; i <= dirnr; i++)     // print all subdirectorys
-//         outp << (subdirs[i]) << '\\';
-//       outp << name << ' ' << fsize << "\n";
-//     }
-//   }
-// }
-
-// void printSDroot(ArduinoOutStream cout) {
-//   SdBaseFile s;
-//   char dircount[5][50];                     // max 5 subdirs
-//   s.openRoot(SD.vol());                     // open root dir
-//   pf(s, dircount, cout);
-// }
-
 void setup(void){
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, 0);
@@ -455,7 +415,7 @@ void setup(void){
   //oled.setTextSize(2);
   oled.setTextColor(WHITE);
   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); // подсвечиваем активность
-  bool loadSett = false;
+  uint8_t loadSett = 0;
   if (SD.begin(SS, SPI_HALF_SPEED)){
      Serial.println("SDCard initialized");
      hasSD = true;
@@ -463,50 +423,18 @@ void setup(void){
      loadSett = LoadSettingFile(SD, "/settings.md");
   }    
   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); // подсвечиваем активность
-  // старая версия подключения, для пары точек с фиксированными в коде параметрами
-  if (!loadSett){
-    bool noWiFi = true;
-    Serial.println("Connecting to WiFi...");
-    while (noWiFi) {
-      noWiFi = !connect2AP(ssid, password);
-      if (noWiFi) {
-        // oled.print("Could not connect to ");    
-        // oled.println(ssid);
-        // oled.display();
+  
+  // подключаемся к WiFi: 1) из сохраненного состояния; 2) с помощью SmartConfig; 3) из файла настроек на диске
+  while (!connect2WIFI(loadSett, ssid_list, password_list)){
+    oled.println("NO WIFI!");
+    oled.display();
+    //возможно тут надо переключиться в режим АР
+    //while (1) delay(100); // зависаем! сети нет, делать нечего
 
-        noWiFi = !connect2AP(ssid2, password2);
-        // oled.print("Could not connect to ");    
-        // oled.println(ssid2);
-        // oled.display();
-      }
-      if (noWiFi) {
-        oled.clearDisplay();
-        oled.display();
-        delay(3000);
-      }
-    }
   }
-  else{
-    bool isWiFi = true;
-    do{
-    for(int i = 0; i < 5; i++)
-    {
-      if (ssid_list[i] == "") continue;
-
-      isWiFi = connect2AP(ssid_list[i].c_str(), password_list[i].c_str());
-      if (isWiFi) break;
-    }
-    if (!isWiFi){
-        Serial.println("Could not connect to any AP!");
-        oled.println("NO WIFI!");
-        oled.display();
-        // возможно тут надо переключиться в режим АР
-        //while (1) delay(100); // зависаем!
-    }
-    } while (!isWiFi);
-  }
+  
   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); // подсвечиваем активность
-  oled.print("SSID: "); oled.println(ssid);
+  oled.print("SSID: "); oled.println(WiFi.SSID());
   oled.print("IP:   "); oled.println(WiFi.localIP());
   oled.display();  
 

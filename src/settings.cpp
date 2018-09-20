@@ -7,11 +7,11 @@ bool havessid = false;
 String password_list[5];
 bool havepass = false;
 
-bool LoadSettingFile(SdFat SD, char * name){
-  bool result = true;
+int LoadSettingFile(SdFat SD, String name){
+  //int result = 0;
 
   File file = SD.open(name, O_READ);
-  if (!file) return false;
+  if (!file) return 0;
   String str, str2;
   //int i = 0;
   int ap_index = 0;
@@ -29,7 +29,7 @@ bool LoadSettingFile(SdFat SD, char * name){
         if (ap_index > 4) {
           Serial.println("Превышено количество AP в файле конфигурации settings.md");
           file.close();
-          return false;
+          return 0;
         }
         havessid = false;
         havepass = false;
@@ -39,8 +39,7 @@ bool LoadSettingFile(SdFat SD, char * name){
       else
         ssid_list[ap_index] = str.substring(str.indexOf(':')+1);
       //Serial.println(ssid_list[ap_index]); 
-      havessid = true;
-      
+      havessid = true;      
     }
 
     //пароль точки доступа
@@ -60,13 +59,12 @@ bool LoadSettingFile(SdFat SD, char * name){
     }
 
     // переходим к следующей точке доступа
-    if (havessid && havepass){
-      
+    if (havessid && havepass){      
       ap_index++;
       if (ap_index > 4) {
         Serial.println("Превышено количество AP в файле конфигурации settings.md");
         file.close();
-        return false;
+        return 5;
         }
       havepass = false;
       havessid = false;
@@ -76,5 +74,5 @@ bool LoadSettingFile(SdFat SD, char * name){
   }
   file.close();
   Serial.print("Load ");Serial.print(ap_index);Serial.println(" AP setting");
-  return result;
+  return (ap_index);
 }
