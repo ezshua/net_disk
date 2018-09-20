@@ -47,7 +47,7 @@ SdFat SD;
 #include <Adafruit_SSD1306.h>
 
 #define OLED_RESET D4
-Adafruit_SSD1306 display(OLED_RESET);
+Adafruit_SSD1306 oled(OLED_RESET);
 
 const char* ssid = "Rizikon";
 const char* password = "02112012nov";
@@ -112,26 +112,29 @@ int filesInfoX = 0;
 int filesInfoY = 0;
 void displayFilesInfo(){
   // стираем надпись про проверку карты
-  display.setCursor(filesInfoX, filesInfoY);
-  display.setTextColor(WHITE, BLACK);
-  display.println("                                                                       ");// примитивно затираем строку
-  display.display();
+  // oled.setCursor(filesInfoX, filesInfoY);
+  // oled.setTextColor(WHITE, BLACK);
+  // oled.println("                                                                       ");// примитивно затираем строку
+  // oled.display();
 
   // устанавливаем в позицию курсор
-  display.setCursor(filesInfoX, filesInfoY);
-  display.setTextColor(WHITE, BLACK);
+  oled.setCursor(filesInfoX, filesInfoY);
+  oled.setTextColor(WHITE, BLACK);
 
   countFiles = 0; // обнуляем счетчик файлов
   long uspace = calcUsedSpaceKB("/");  
   if (uspace == -1)
   {
     Serial.println("SDCard empty!");
-    display.println("SDCard empty!");
-    display.display();
+    // стираем надпись про проверку карты
+    oled.println("                                                                       ");// примитивно затираем строку
+    //oled.display();
+    oled.println("SDCard empty!");
+    oled.display();
     return;
   }
   
-  u_long fspace = calcFreeSpaceKB();
+    u_long fspace = calcFreeSpaceKB();
   Serial.print("Files: ");
   Serial.print(countFiles);
   Serial.print(", used: ");
@@ -141,10 +144,16 @@ void displayFilesInfo(){
   Serial.println(" MB");
   //double upers = 100*uspace/(fspace+uspace);
   //double fpers = 100*fspace/(fspace+uspace);
-  display.print("Files: ");  display.println(countFiles);
-  display.print("Used:  ");  display.print(uspace);  display.println(" KB"); //");display.print(upers);display.println(" %)");
-  display.print("Free:  ");  display.print(fspace);  display.println(" KB"); //");display.print(fpers);display.println(" %)");
-  display.display();
+  // стираем надпись про проверку карты
+  oled.println("                                                                       ");// примитивно затираем строку
+  oled.display();
+  // устанавливаем в позицию курсор
+  oled.setCursor(filesInfoX, filesInfoY);
+  oled.setTextColor(WHITE, BLACK);
+  oled.print("Files: ");  oled.println(countFiles);
+  oled.print("Used:  ");  oled.print(uspace);  oled.println(" KB"); //");oled.print(upers);oled.println(" %)");
+  oled.print("Free:  ");  oled.print(fspace);  oled.println(" KB"); //");oled.print(fpers);oled.println(" %)");
+  oled.display();
 }
 
 
@@ -223,21 +232,21 @@ void handleFileUpload(){
     if(SD.exists((char *)upload.filename.c_str())) SD.remove((char *)upload.filename.c_str());
     uploadFile = SD.open(upload.filename.c_str(), FILE_WRITE);
     Serial.print("Upload: START, filename: "); Serial.println(upload.filename);
-    display.setCursor(statusX, statusY); 
-    display.setTextColor(WHITE,BLACK); 
-    display.println("                                                                                                               ");// примитивно затираем строку
-    display.setCursor(statusX, statusY); 
-    display.setTextColor(WHITE,BLACK); 
-    display.print("Up: "); display.println(utf8rus(upload.filename)); display.display();
+    oled.setCursor(statusX, statusY); 
+    oled.setTextColor(WHITE,BLACK); 
+    oled.println("                                                                                                               ");// примитивно затираем строку
+    oled.setCursor(statusX, statusY); 
+    oled.setTextColor(WHITE,BLACK); 
+    oled.print("Up: "); oled.println(utf8rus(upload.filename)); oled.display();
     startM = millis();    
     pers = 0;
   } else if(upload.status == UPLOAD_FILE_WRITE){
     if(uploadFile) uploadFile.write(upload.buf, upload.currentSize);
     pers += upload.currentSize;
         //Serial.print("Upload: WRITE+");Serial.print(upload.currentSize); Serial.print(" = ");Serial.print(upload.totalSize); Serial.println(" bytes");
-    // display.setCursor(statusX, statusY); 
-    // display.setTextColor(WHITE,BLACK); 
-    // display.print("Upload: "); display.print(upload.totalSize); display.println(" B"); display.display();
+    // oled.setCursor(statusX, statusY); 
+    // oled.setTextColor(WHITE,BLACK); 
+    // oled.print("Upload: "); oled.print(upload.totalSize); oled.println(" B"); oled.display();
   } else if(upload.status == UPLOAD_FILE_END){
     if(uploadFile) uploadFile.close();
     int interval = millis() - startM;
@@ -245,14 +254,14 @@ void handleFileUpload(){
     Serial.print("Upload: END, Size: "); Serial.print(upload.totalSize); Serial.print(" bytes, Interval: ");
     Serial.print(interval);Serial.print(" msec, Speed: ");
     Serial.print(speed);Serial.println(" kbytes/sec");
-    display.setCursor(statusX, statusY); 
-    display.setTextColor(WHITE,BLACK);
-    display.println("                                                                                                               ");// примитивно затираем строку
-    display.setCursor(statusX, statusY); 
-    display.setTextColor(WHITE,BLACK); 
-    display.print("Upl: "); display.print(upload.totalSize); display.println(" B");
-    display.print("Spd:"); display.print(speed); display.println(" KB/sec");
-    display.display();
+    oled.setCursor(statusX, statusY); 
+    oled.setTextColor(WHITE,BLACK);
+    oled.println("                                                                                                               ");// примитивно затираем строку
+    oled.setCursor(statusX, statusY); 
+    oled.setTextColor(WHITE,BLACK); 
+    oled.print("Upl: "); oled.print(upload.totalSize); oled.println(" B");
+    oled.print("Spd:"); oled.print(speed); oled.println(" KB/sec");
+    oled.display();
         // Serial.print("Upload: END, Interval: ");Serial.print(interval);Serial.println(" msec");
         // Serial.print("Upload: END, Speed: ");Serial.print(speed);Serial.println(" kbytes/sec");
     
@@ -422,14 +431,14 @@ void setup(void){
   //Serial.setDebugOutput(true);
   Serial.print("\n");
   
-  display.begin(SSD1306_SWITCHCAPVCC, SSD1306_I2C_ADDRESS);  // initialize with the I2C addr 0x3C (for the 128x64)
-  display.cp437(true);
-  display.clearDisplay();
-  display.display();
+  oled.begin(SSD1306_SWITCHCAPVCC, SSD1306_I2C_ADDRESS);  // initialize with the I2C addr 0x3C (for the 128x64)
+  oled.cp437(true);
+  oled.clearDisplay();
+  oled.display();
 
-  display.setCursor(0,0);
-  //display.setTextSize(2);
-  display.setTextColor(WHITE);
+  oled.setCursor(0,0);
+  //oled.setTextSize(2);
+  oled.setTextColor(WHITE);
 
   bool loadSett = false;
   if (SD.begin(SS, SPI_HALF_SPEED)){
@@ -446,18 +455,18 @@ void setup(void){
     while (noWiFi) {
       noWiFi = !connect2AP(ssid, password);
       if (noWiFi) {
-        // display.print("Could not connect to ");    
-        // display.println(ssid);
-        // display.display();
+        // oled.print("Could not connect to ");    
+        // oled.println(ssid);
+        // oled.display();
 
         noWiFi = !connect2AP(ssid2, password2);
-        // display.print("Could not connect to ");    
-        // display.println(ssid2);
-        // display.display();
+        // oled.print("Could not connect to ");    
+        // oled.println(ssid2);
+        // oled.display();
       }
       if (noWiFi) {
-        display.clearDisplay();
-        display.display();
+        oled.clearDisplay();
+        oled.display();
         delay(3000);
       }
     }
@@ -474,17 +483,17 @@ void setup(void){
     }
     if (!isWiFi){
         Serial.println("Could not connect to any AP!");
-        display.println("NO WIFI!");
-        display.display();
+        oled.println("NO WIFI!");
+        oled.display();
         // возможно тут надо переключиться в режим АР
         //while (1) delay(100); // зависаем!
     }
     } while (!isWiFi);
   }
   
-  display.print("SSID: "); display.println(ssid);
-  display.print("IP:   "); display.println(WiFi.localIP());
-  display.display();  
+  oled.print("SSID: "); oled.println(ssid);
+  oled.print("IP:   "); oled.println(WiFi.localIP());
+  oled.display();  
 
   server.on("/list", HTTP_GET, printDirectory);
   server.on("/edit", HTTP_DELETE, handleDelete);
@@ -496,20 +505,20 @@ void setup(void){
   Serial.println("HTTP server started");
 
   if (hasSD){    
-    display.println("SDCard init!"); display.display();
-    filesInfoX = display.getCursorX();
-    filesInfoY = display.getCursorY();
-    display.println("Checking card...");
-    display.display();
-    display.setCursor(filesInfoX, filesInfoY);    
+    oled.println("SDCard init!"); oled.display();
+    filesInfoX = oled.getCursorX();
+    filesInfoY = oled.getCursorY();
+    oled.println("Checking card...");
+    oled.display();
+    //oled.setCursor(filesInfoX, filesInfoY);    
     displayFilesInfo();          
-    statusX = display.getCursorX();
-    statusY = display.getCursorY();
+    statusX = oled.getCursorX();
+    statusY = oled.getCursorY();
   }
   else
   {
     Serial.println("No SDCard initialized.");
-    display.println("No SDCard"); display.display();
+    oled.println("No SDCard"); oled.display();
   }
   
 }
