@@ -402,19 +402,20 @@ void setup(void){
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, 0);
   Serial.begin(115200);
+  Serial.flush();
   delay(1000);
   //Serial.setDebugOutput(true);
   Serial.print("\n");
   
   oled.begin(SSD1306_SWITCHCAPVCC, SSD1306_I2C_ADDRESS);  // initialize with the I2C addr 0x3C (for the 128x64)
   oled.cp437(true);
-  oled.setTextSize(1);
+  //oled.setTextSize(1);
   oled.clearDisplay();
   oled.display();
 
   oled.setCursor(0,0);
   //oled.setTextSize(2);
-  oled.setTextColor(WHITE);
+  oled.setTextColor(WHITE, BLACK);
   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); // подсвечиваем активность
   uint8_t loadSett = 0;
   if (SD.begin(SS, SPI_HALF_SPEED)){
@@ -434,21 +435,21 @@ void setup(void){
   oled.println("Connect WIFI saved...");
   oled.display();
   if (!connectSaved()){
-    oled.setCursor(xcur, ycur);
-    oled.println("                     ");oled.display();
+    oled.setCursor(xcur, ycur); oled.setTextColor(WHITE, BLACK);
+    oled.println("                     ");//oled.display();
     oled.setCursor(xcur, ycur);
     oled.println("Connect WIFI Smart...");
     oled.display();
     if (!connectSmart()){
-      oled.setCursor(xcur, ycur);
-      oled.println("                     ");oled.display();
+      oled.setCursor(xcur, ycur); oled.setTextColor(WHITE, BLACK);
+      oled.println("                     ");//oled.display();
       oled.setCursor(xcur, ycur);
       oled.println("Connect WIFI sett...");
       oled.display();
       if (!connectSettings(loadSett, ssid_list, password_list))
       {
-        oled.setCursor(xcur, ycur);
-        oled.println("                     ");oled.display();
+        oled.setCursor(xcur, ycur); oled.setTextColor(WHITE, BLACK);
+        oled.println("                     ");//oled.display();
         oled.setCursor(xcur, ycur);
         oled.println("NO WIFI!");
         oled.display();
@@ -458,7 +459,8 @@ void setup(void){
     }
   }
   oled.setCursor(xcur, ycur);
-  oled.println("                    ");
+  oled.setTextColor(WHITE, BLACK);
+  oled.println("                     ");
   oled.display();
   oled.setCursor(xcur, ycur);
   // while (!connect2WIFI(loadSett, ssid_list, password_list))

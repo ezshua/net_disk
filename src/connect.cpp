@@ -25,8 +25,8 @@ bool connect2AP(const char *ssid, const char *password)
     }
   }
   Serial.println("Connected!");
-  Serial.print("IP: ");
-  Serial.println(WiFi.localIP());
+  Serial.println(String("SSID: ") + WiFi.SSID());
+  Serial.println(String("IP: ") + WiFi.localIP().toString());
   return true;
 }
 
@@ -66,7 +66,8 @@ bool connectSaved()
   return false;
 }
 
-bool connectSmart(){
+bool connectSmart()
+{
   // пробуем использовать SmartConfig
   int counter = 0;
   Serial.print("SmartConfig");
@@ -98,16 +99,20 @@ bool connectSmart(){
   return false;
 }
 
-bool connectSettings(uint8_t count, String ssid_l[], String pass_l[]){
+bool connectSettings(uint8_t count, String ssid_l[], String pass_l[])
+{
   // пробуем подключиться по файлу конфигурации
   if (count > 0)
     for (int i = 0; i < count; i++)
     {
       if (connect2AP(ssid_l[i].c_str(), pass_l[i].c_str()))
+      {
+        // Serial.println(String("SSID: ") + WiFi.SSID());
+        // Serial.println(String("IP: ") + WiFi.localIP().toString());
         return true;
+      }
     }
-
-    return false;
+  return false;
 }
 
 bool connect2WIFI(uint8_t count, String ssid_l[], String pass_l[])
@@ -152,7 +157,7 @@ bool connect2WIFI(uint8_t count, String ssid_l[], String pass_l[])
   // пробуем использовать SmartConfig
   if (connectSmart())
     return true;
-  
+
   // counter = 0;
   // Serial.print("SmartConfig");
   // WiFi.beginSmartConfig();
