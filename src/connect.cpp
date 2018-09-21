@@ -30,13 +30,9 @@ bool connect2AP(const char *ssid, const char *password)
   return true;
 }
 
-bool connect2WIFI(uint8_t count, String ssid_l[], String pass_l[])
+bool connectSaved()
 {
-  //WiFi.disconnect(); // на случай сброса конфигурации
-  WiFi.mode(WIFI_STA);
-  delay(500);
   uint8_t counter = 0;
-
   // пробуем сохраненный сеанс
   if (WiFi.SSID() != "")
   {
@@ -64,11 +60,15 @@ bool connect2WIFI(uint8_t count, String ssid_l[], String pass_l[])
   }
   else
   {
-    Serial.println("No saved SSID");
+    Serial.println("Saved SSID.......Bad!");
   }
 
+  return false;
+}
+
+bool connectSmart(){
   // пробуем использовать SmartConfig
-  counter = 0;
+  int counter = 0;
   Serial.print("SmartConfig");
   WiFi.beginSmartConfig();
   while (WiFi.status() != WL_CONNECTED)
@@ -95,6 +95,10 @@ bool connect2WIFI(uint8_t count, String ssid_l[], String pass_l[])
     }
   }
 
+  return false;
+}
+
+bool connectSettings(uint8_t count, String ssid_l[], String pass_l[]){
   // пробуем подключиться по файлу конфигурации
   if (count > 0)
     for (int i = 0; i < count; i++)
@@ -102,6 +106,89 @@ bool connect2WIFI(uint8_t count, String ssid_l[], String pass_l[])
       if (connect2AP(ssid_l[i].c_str(), pass_l[i].c_str()))
         return true;
     }
+
+    return false;
+}
+
+bool connect2WIFI(uint8_t count, String ssid_l[], String pass_l[])
+{
+  //WiFi.disconnect(); // на случай сброса конфигурации
+  WiFi.mode(WIFI_STA);
+  delay(500);
+  //uint8_t counter = 0;
+
+  if (connectSaved())
+    return true;
+  // // пробуем сохраненный сеанс
+  // if (WiFi.SSID() != "")
+  // {
+  //   Serial.println(String("Using a saved SSID: ") + WiFi.SSID());
+  //   Serial.print("Connecting");
+  //   WiFi.begin();
+  //   while (WiFi.status() != WL_CONNECTED)
+  //   {
+  //     delay(1000);
+  //     Serial.print(".");
+  //     counter++;
+  //     if (counter > 30)
+  //     {
+  //       Serial.println("Bad!");
+  //       break;
+  //     }
+  //   }
+  //   if (counter <= 30)
+  //   {
+  //     Serial.println("Ok");
+  //     Serial.println(String("SSID: ") + WiFi.SSID());
+  //     Serial.println(String("IP: ") + WiFi.localIP().toString());
+  //     return true;
+  //   }
+  // }
+  // else
+  // {
+  //   Serial.println("No saved SSID");
+  // }
+
+  // пробуем использовать SmartConfig
+  if (connectSmart())
+    return true;
+  
+  // counter = 0;
+  // Serial.print("SmartConfig");
+  // WiFi.beginSmartConfig();
+  // while (WiFi.status() != WL_CONNECTED)
+  // {
+  //   delay(1000);
+  //   Serial.print(".");
+  //   counter++;
+  //   if (WiFi.smartConfigDone())
+  //   {
+  //     Serial.println("Done");
+  //     WiFi.stopSmartConfig();
+  //     delay(2000);
+  //     Serial.println(String("SSID: ") + WiFi.SSID());
+  //     Serial.println(String("IP: ") + WiFi.localIP().toString());
+  //     return true;
+  //     //break;
+  //   }
+  //   // не смогли получить конфигурацию и подключиться к сети за 30 секунд
+  //   if (counter > 30)
+  //   {
+  //     Serial.println("Bad!");
+  //     WiFi.stopSmartConfig();
+  //     break;
+  //   }
+  // }
+
+  // пробуем подключиться по файлу конфигурации
+  if (connectSettings(count, ssid_l, pass_l))
+    return true;
+  // if (count > 0)
+  //   for (int i = 0; i < count; i++)
+  //   {
+  //     if (connect2AP(ssid_l[i].c_str(), pass_l[i].c_str()))
+  //       return true;
+  //   }
 
   Serial.println("Could not connect to any AP!");
   // возможно тут надо переключиться в режим АР

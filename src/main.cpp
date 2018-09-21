@@ -408,6 +408,7 @@ void setup(void){
   
   oled.begin(SSD1306_SWITCHCAPVCC, SSD1306_I2C_ADDRESS);  // initialize with the I2C addr 0x3C (for the 128x64)
   oled.cp437(true);
+  oled.setTextSize(1);
   oled.clearDisplay();
   oled.display();
 
@@ -425,14 +426,49 @@ void setup(void){
   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); // подсвечиваем активность
   
   // подключаемся к WiFi: 1) из сохраненного состояния; 2) с помощью SmartConfig; 3) из файла настроек на диске
-  while (!connect2WIFI(loadSett, ssid_list, password_list)){
-    oled.println("NO WIFI!");
+  //WiFi.disconnect(); // на случай сброса конфигурации
+  WiFi.mode(WIFI_STA);
+  delay(500);
+  int xcur = oled.getCursorX();
+  int ycur = oled.getCursorY();
+  oled.println("Connect WIFI saved...");
+  oled.display();
+  if (!connectSaved()){
+    oled.setCursor(xcur, ycur);
+    oled.println("                     ");oled.display();
+    oled.setCursor(xcur, ycur);
+    oled.println("Connect WIFI Smart...");
     oled.display();
-    //возможно тут надо переключиться в режим АР
-    //while (1) delay(100); // зависаем! сети нет, делать нечего
-
+    if (!connectSmart()){
+      oled.setCursor(xcur, ycur);
+      oled.println("                     ");oled.display();
+      oled.setCursor(xcur, ycur);
+      oled.println("Connect WIFI sett...");
+      oled.display();
+      if (!connectSettings(loadSett, ssid_list, password_list))
+      {
+        oled.setCursor(xcur, ycur);
+        oled.println("                     ");oled.display();
+        oled.setCursor(xcur, ycur);
+        oled.println("NO WIFI!");
+        oled.display();
+        //возможно тут надо переключиться в режим АР
+        //while (1) delay(100); // зависаем! сети нет, делать нечего
+      }
+    }
   }
-  
+  oled.setCursor(xcur, ycur);
+  oled.println("                    ");
+  oled.display();
+  oled.setCursor(xcur, ycur);
+  // while (!connect2WIFI(loadSett, ssid_list, password_list))
+  // {
+  //   oled.println("NO WIFI!");
+  //   oled.display();
+  //   //возможно тут надо переключиться в режим АР
+  //   //while (1) delay(100); // зависаем! сети нет, делать нечего
+  // }
+
   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); // подсвечиваем активность
   oled.print("SSID: "); oled.println(WiFi.SSID());
   oled.print("IP:   "); oled.println(WiFi.localIP());
