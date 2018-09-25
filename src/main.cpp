@@ -409,9 +409,10 @@ void setup(void){
   
   oled.begin(SSD1306_SWITCHCAPVCC, SSD1306_I2C_ADDRESS);  // initialize with the I2C addr 0x3C (for the 128x64)
   oled.cp437(true);
+  oled.setFont(System5x7);
   //oled.setTextSize(1);
   oled.clearDisplay();
-  oled.display();
+  //oled.display();
 
   oled.setCursor(0,0);
   //oled.setTextSize(2);
